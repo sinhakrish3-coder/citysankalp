@@ -46,7 +46,7 @@ export function CommentsSheet({ postId, open, onOpenChange }: CommentsSheetProps
         .from('feed_comments')
         .select(`
           id, body, created_at,
-          profiles (display_name, handle, avatar_url)
+          profiles!user_id (display_name, handle, avatar_url)
         `)
         .eq('post_id', postId)
         .order('created_at', { ascending: true })
