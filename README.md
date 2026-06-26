@@ -21,23 +21,6 @@ Instead of scattered WhatsApp messages, duplicate reports, and slow complaint po
 
 ---
 
-## 🔄 Workflow
-
-```mermaid
-flowchart LR
-    A["Citizen spots an issue"] --> B["Snap & Report"]
-    B --> C["Issue appears on local map/feed"]
-    C --> D["Community amplifies and signs petition"]
-    D --> E{"Goal reached?"}
-    E -- Yes --> F["Issue verified / escalated"]
-    E -- No --> D
-    F --> G["Organization claims issue"]
-    G --> H["Resolution posted"]
-    H --> I["Citizen earns merit & rewards"]
-```
-
----
-
 ## 🛠 Tech Stack
 
 - **Frontend:** Next.js 16, React 19, TypeScript
