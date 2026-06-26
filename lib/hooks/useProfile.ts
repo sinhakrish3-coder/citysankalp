@@ -53,21 +53,17 @@ export function useProfile(userId: string | null | undefined): UseProfileReturn 
       })
 
     // Live updates — merit score changes fire from DB triggers
-    const channel = supabase
-      .channel(`profile-${userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event:  'UPDATE',
-          schema: 'public',
-          table:  'profiles',
-          filter: `id=eq.${userId}`,
-        },
-        (payload) => {
-          if (mounted) setProfile(mapProfile(payload.new as ProfileRow))
-        }
-      )
-      .subscribe()
+    const channel = supabase.channel(`profile-${userId}`);
+
+channel.on(
+  'postgres_changes',
+  { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` },
+  (payload) => {
+    if (mounted) setProfile(mapProfile(payload.new as ProfileRow))
+  }
+);
+
+channel.subscribe();
 
     return () => {
       mounted = false
