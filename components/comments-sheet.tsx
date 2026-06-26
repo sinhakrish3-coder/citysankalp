@@ -111,7 +111,7 @@ export function CommentsSheet({ postId, open, onOpenChange }: CommentsSheetProps
                 <Avatar className="size-8 border border-border/60">
                   <AvatarImage src={c.profiles?.avatar_url || '/placeholder.svg'} />
                   <AvatarFallback className="bg-secondary text-[10px]">
-                    {c.profiles?.display_name?.slice(0, 2)}
+                    {c.profiles?.display_name?.slice(0, 2) ?? 'C'}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 rounded-2xl rounded-tl-none bg-secondary/30 p-3 text-sm">
