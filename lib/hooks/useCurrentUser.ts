@@ -52,7 +52,7 @@ export function useCurrentUser(): CurrentUser {
         .from('profiles')
         .select('*')
         .eq('id', currentUser.id)
-        .single()
+        .maybeSingle()
 
       if (profileError && profileError.code !== 'PGRST116') {
         console.error('[CitySankalp] Profile fetch error:', profileError.message)
