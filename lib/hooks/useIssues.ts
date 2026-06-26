@@ -67,27 +67,32 @@ export function useIssues(): UseIssuesReturn {
     // Subscribe to any UPDATE on the issues table.
     // When an amplification trigger fires and updates
     // amplifies_count, this event pushes the new row to us.
-    const channel = supabase
-      .channel(`issues-live-${Math.random()}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'issues' },
-        (payload) => {
-          const updated = mapIssue(payload.new as IssueRow)
-          setIssues((prev) =>
-            prev.map((issue) => (issue.id === updated.id ? updated : issue))
-          )
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'issues' },
-        (payload) => {
-          const newIssue = mapIssue(payload.new as IssueRow)
-          setIssues((prev) => [newIssue, ...prev])
-        }
-      )
-      .subscribe()
+    // 1. Initialize channel
+const channel = supabase.channel(`issues-live-${Math.random()}`);
+
+// 2. Attach listeners separately
+channel.on(
+  'postgres_changes',
+  { event: 'UPDATE', schema: 'public', table: 'issues' },
+  (payload) => {
+    const updated = mapIssue(payload.new as IssueRow)
+    setIssues((prev) =>
+      prev.map((issue) => (issue.id === updated.id ? updated : issue))
+    )
+  }
+);
+
+channel.on(
+  'postgres_changes',
+  { event: 'INSERT', schema: 'public', table: 'issues' },
+  (payload) => {
+    const newIssue = mapIssue(payload.new as IssueRow)
+    setIssues((prev) => [newIssue, ...prev])
+  }
+);
+
+// 3. Subscribe only after all listeners are attached
+channel.subscribe();
 
     return () => {
       supabase.removeChannel(channel)
@@ -115,15 +120,18 @@ export function useIssue(id: string) {
         setLoading(false)
       })
 
-    const channel = supabase
-      .channel(`issue-${id}-${Math.random()}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'issues', filter: `id=eq.${id}` },
-        (payload) => setIssue(mapIssue(payload.new as IssueRow))
-      )
-      .subscribe()
+    // 1. Initialize channel
+const channel = supabase.channel(`issue-${id}-${Math.random()}`);
 
+// 2. Attach listener separately
+channel.on(
+  'postgres_changes',
+  { event: 'UPDATE', schema: 'public', table: 'issues', filter: `id=eq.${id}` },
+  (payload) => setIssue(mapIssue(payload.new as IssueRow))
+);
+
+// 3. Subscribe only after listener is attached
+channel.subscribe();
     return () => { supabase.removeChannel(channel) }
   }, [id])
 
