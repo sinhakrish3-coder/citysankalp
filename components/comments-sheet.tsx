@@ -21,7 +21,7 @@ interface Comment {
     display_name: string
     handle: string
     avatar_url: string | null
-  }
+  } | null
 }
 
 interface CommentsSheetProps {
@@ -42,6 +42,13 @@ export function CommentsSheet({ postId, open, onOpenChange }: CommentsSheetProps
     let mounted = true
     const fetchComments = async () => {
       setLoading(true)
+
+      // FIX: Use the explicit FK hint `profiles!user_id` so PostgREST
+      // never has to guess which foreign key to traverse.
+      // The schema defines:  feed_comments.user_id → profiles.id
+      // Without the hint, PostgREST auto-detects it, but on some Supabase
+      // versions an ambiguous schema cache can return a 406. The hint is
+      // the PostgREST-recommended practice and costs nothing.
       const { data } = await supabase
         .from('feed_comments')
         .select(`
@@ -52,7 +59,7 @@ export function CommentsSheet({ postId, open, onOpenChange }: CommentsSheetProps
         .order('created_at', { ascending: true })
       
       if (mounted && data) {
-        setComments(data as any)
+        setComments(data as Comment[])
       }
       setLoading(false)
     }
@@ -115,7 +122,9 @@ export function CommentsSheet({ postId, open, onOpenChange }: CommentsSheetProps
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 rounded-2xl rounded-tl-none bg-secondary/30 p-3 text-sm">
-                  <p className="font-semibold text-xs mb-1 text-foreground/80">{c.profiles?.display_name}</p>
+                  <p className="font-semibold text-xs mb-1 text-foreground/80">
+                    {c.profiles?.display_name ?? 'Citizen'}
+                  </p>
                   <p className="text-muted-foreground">{c.body}</p>
                 </div>
               </div>
