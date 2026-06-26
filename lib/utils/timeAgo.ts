@@ -12,15 +12,10 @@
 // ─────────────────────────────────────────────────────────────
 
 export function timeAgo(isoString: string | null | undefined): string {
-<<<<<<< HEAD
   // Guard: null/undefined input (e.g. manually seeded rows) → 'just now'
   if (!isoString) return 'just now'
   const then = new Date(isoString).getTime()
   // Guard: unparseable string → NaN
-=======
-  if (!isoString) return 'just now'
-  const then = new Date(isoString).getTime()
->>>>>>> b869091130ac226c35d4f09f9fc3e150303850f6
   if (isNaN(then)) return 'just now'
 
   const now   = Date.now()
@@ -40,16 +35,11 @@ export function timeAgo(isoString: string | null | undefined): string {
   return `${Math.floor(diffD / 365)}y ago`
 }
 
-<<<<<<< HEAD
-/** Returns daysLeft from an ISO end-date; clamped to 0. */
-export function daysLeft(isoEndDate: string | null | undefined): number {
-  // Guard: null/undefined input (e.g. competition without ends_at)
-=======
 /** Returns daysLeft from an ISO end-date; clamped to 0.
  *  FIX: returns 0 for null/undefined/invalid dates so the Rewards
  *  tab badge renders "0d left" instead of "NaNd left". */
 export function daysLeft(isoEndDate: string | null | undefined): number {
->>>>>>> b869091130ac226c35d4f09f9fc3e150303850f6
+  // Guard: null/undefined input (e.g. competition without ends_at)
   if (!isoEndDate) return 0
   const end = new Date(isoEndDate).getTime()
   if (isNaN(end)) return 0
