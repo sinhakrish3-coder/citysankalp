@@ -3,11 +3,20 @@
 //  Converts an ISO-8601 timestamp string into a human-readable
 //  relative label identical to the existing UI strings
 //  ("12m ago", "2h ago", "1d ago", "3w ago").
+//
+//  FIX: Both functions now guard against null / undefined / invalid
+//  date strings. Previously, passing null to new Date() would return
+//  the epoch (Jan 1 1970) and produce wildly wrong output; passing
+//  undefined produced NaN which would render as "NaNd left" in the
+//  Rewards tab badge. Both now fall back to safe defaults.
 // ─────────────────────────────────────────────────────────────
 
-export function timeAgo(isoString: string): string {
+export function timeAgo(isoString: string | null | undefined): string {
+  if (!isoString) return 'just now'
+  const then = new Date(isoString).getTime()
+  if (isNaN(then)) return 'just now'
+
   const now   = Date.now()
-  const then  = new Date(isoString).getTime()
   const diffS = Math.max(0, Math.floor((now - then) / 1000))
 
   if (diffS < 60)           return `${diffS}s ago`
@@ -24,8 +33,13 @@ export function timeAgo(isoString: string): string {
   return `${Math.floor(diffD / 365)}y ago`
 }
 
-/** Returns daysLeft from an ISO end-date; clamped to 0. */
-export function daysLeft(isoEndDate: string): number {
-  const diff = new Date(isoEndDate).getTime() - Date.now()
+/** Returns daysLeft from an ISO end-date; clamped to 0.
+ *  FIX: returns 0 for null/undefined/invalid dates so the Rewards
+ *  tab badge renders "0d left" instead of "NaNd left". */
+export function daysLeft(isoEndDate: string | null | undefined): number {
+  if (!isoEndDate) return 0
+  const end = new Date(isoEndDate).getTime()
+  if (isNaN(end)) return 0
+  const diff = end - Date.now()
   return Math.max(0, Math.ceil(diff / 86_400_000))
 }
