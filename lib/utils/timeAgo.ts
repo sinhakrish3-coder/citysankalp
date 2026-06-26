@@ -5,9 +5,14 @@
 //  ("12m ago", "2h ago", "1d ago", "3w ago").
 // ─────────────────────────────────────────────────────────────
 
-export function timeAgo(isoString: string): string {
+export function timeAgo(isoString: string | null | undefined): string {
+  // Guard: null/undefined input (e.g. manually seeded rows) → 'just now'
+  if (!isoString) return 'just now'
+  const then = new Date(isoString).getTime()
+  // Guard: unparseable string → NaN
+  if (isNaN(then)) return 'just now'
+
   const now   = Date.now()
-  const then  = new Date(isoString).getTime()
   const diffS = Math.max(0, Math.floor((now - then) / 1000))
 
   if (diffS < 60)           return `${diffS}s ago`
@@ -25,7 +30,12 @@ export function timeAgo(isoString: string): string {
 }
 
 /** Returns daysLeft from an ISO end-date; clamped to 0. */
-export function daysLeft(isoEndDate: string): number {
-  const diff = new Date(isoEndDate).getTime() - Date.now()
+export function daysLeft(isoEndDate: string | null | undefined): number {
+  // Guard: null/undefined input (e.g. competition without ends_at)
+  if (!isoEndDate) return 0
+  const end = new Date(isoEndDate).getTime()
+  if (isNaN(end)) return 0
+  const diff = end - Date.now()
   return Math.max(0, Math.ceil(diff / 86_400_000))
 }
+

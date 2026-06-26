@@ -456,7 +456,13 @@ CREATE TABLE IF NOT EXISTS public.merit_transactions (
 
 CREATE INDEX IF NOT EXISTS merit_tx_user_created_idx ON public.merit_transactions(user_id, created_at DESC);
 
--- Reusable merit-award helper called from other triggers
+-- ─────────────────────────────────────────────────────────────
+--  award_merit() — Reusable helper called by ALL trigger functions
+--  below. MUST be defined before any trigger function that calls it.
+--  (PostgreSQL resolves PL/pgSQL calls at runtime, so the order
+--  doesn't error at CREATE time, but it matters for CI seeds that
+--  run inserts in the same transaction as schema creation.)
+-- ─────────────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION public.award_merit(
   p_user_id UUID,
   p_points  INTEGER,
@@ -611,13 +617,32 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "notifs_read_own"         ON public.notifications FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "notifs_update_own"       ON public.notifications FOR UPDATE USING (auth.uid() = user_id);
 
--- Trigger for issue status change notification
+-- Trigger function handles both INSERT (new submission) and UPDATE OF status
 CREATE OR REPLACE FUNCTION public.notify_on_issue_update()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
-  IF NEW.status != OLD.status AND NEW.reported_by_id IS NOT NULL THEN
-    INSERT INTO public.notifications (user_id, title, body, type)
-    VALUES (NEW.reported_by_id, 'Issue Update', 'Your issue "' || NEW.title || '" is now ' || NEW.status, 'issue_update');
+  -- On INSERT: notify the reporter that their issue was submitted
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.reported_by_id IS NOT NULL THEN
+      INSERT INTO public.notifications (user_id, title, body, type)
+      VALUES (
+        NEW.reported_by_id,
+        'Issue Submitted',
+        'Your issue "' || NEW.title || '" has been received and is under review.',
+        'issue_submitted'
+      );
+    END IF;
+  -- On UPDATE: notify on any status change
+  ELSIF TG_OP = 'UPDATE' THEN
+    IF NEW.status != OLD.status AND NEW.reported_by_id IS NOT NULL THEN
+      INSERT INTO public.notifications (user_id, title, body, type)
+      VALUES (
+        NEW.reported_by_id,
+        'Issue Update',
+        'Your issue "' || NEW.title || '" is now ' || NEW.status,
+        'issue_update'
+      );
+    END IF;
   END IF;
   RETURN NEW;
 END;
@@ -625,7 +650,7 @@ $$;
 
 DROP TRIGGER IF EXISTS issue_update_notif ON public.issues;
 CREATE TRIGGER issue_update_notif
-  AFTER UPDATE OF status ON public.issues
+  AFTER INSERT OR UPDATE OF status ON public.issues
   FOR EACH ROW EXECUTE FUNCTION public.notify_on_issue_update();
 
 -- =============================================================
@@ -637,7 +662,10 @@ BEGIN
   RETURN QUERY
   SELECT i.*
   FROM public.issues i
-  WHERE i.status NOT IN ('Resolved', 'Closed')
+  -- Allowlist matching the issues.status CHECK constraint.
+  -- Previously was NOT IN ('Resolved','Closed') which are not valid
+  -- statuses, so the filter matched every row — effectively no filter.
+  WHERE i.status IN ('Open', 'Verified', 'NGO Claimed', 'In Progress')
   ORDER BY 
     -- 1. Proximity Score (if coordinates exist, heavily weight nearby issues)
     CASE 

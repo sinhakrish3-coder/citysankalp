@@ -21,7 +21,7 @@ interface Comment {
     display_name: string
     handle: string
     avatar_url: string | null
-  }
+  } | null
 }
 
 interface CommentsSheetProps {
@@ -46,7 +46,7 @@ export function CommentsSheet({ postId, open, onOpenChange }: CommentsSheetProps
         .from('feed_comments')
         .select(`
           id, body, created_at,
-          profiles (display_name, handle, avatar_url)
+          profiles!user_id (display_name, handle, avatar_url)
         `)
         .eq('post_id', postId)
         .order('created_at', { ascending: true })
@@ -111,7 +111,7 @@ export function CommentsSheet({ postId, open, onOpenChange }: CommentsSheetProps
                 <Avatar className="size-8 border border-border/60">
                   <AvatarImage src={c.profiles?.avatar_url || '/placeholder.svg'} />
                   <AvatarFallback className="bg-secondary text-[10px]">
-                    {c.profiles?.display_name?.slice(0, 2)}
+                    {(c.profiles?.display_name?.slice(0, 2)) ?? 'C'}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 rounded-2xl rounded-tl-none bg-secondary/30 p-3 text-sm">

@@ -109,7 +109,7 @@ export function useIssue(id: string) {
       .from('issues')
       .select('*')
       .eq('id', id)
-      .single()
+      .maybeSingle()
       .then(({ data }) => {
         setIssue(data ? mapIssue(data) : null)
         setLoading(false)

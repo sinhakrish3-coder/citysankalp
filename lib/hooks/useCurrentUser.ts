@@ -47,14 +47,16 @@ export function useCurrentUser(): CurrentUser {
       if (!mounted || !currentUser) { setLoading(false); return }
       setUser(currentUser)
 
-      // 3. Fetch the profile the DB trigger created for us
+      // 3. Fetch the profile the DB trigger created for us.
+      //    .maybeSingle() returns { data: null, error: null } for zero rows
+      //    (no 406 HTTP error) so new anonymous users don't crash the hook.
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', currentUser.id)
-        .single()
+        .maybeSingle()
 
-      if (profileError && profileError.code !== 'PGRST116') {
+      if (profileError) {
         console.error('[CitySankalp] Profile fetch error:', profileError.message)
       }
       if (mounted) {
