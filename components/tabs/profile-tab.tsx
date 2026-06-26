@@ -31,6 +31,7 @@ import {
 import { useProfile } from '@/lib/hooks/useProfile'
 import { useAppContext } from '@/providers/AppProviders'
 import { supabase } from '@/lib/supabaseClient'
+import { profile as fallbackProfile } from '@/lib/civic-data'
 
 export function ProfileTab() {
   const { user } = useAppContext()
@@ -58,12 +59,23 @@ export function ProfileTab() {
       .order('merit_score', { ascending: false })
       .limit(5)
       .then(({ data }) => {
-        if (data) setLeaderboard(data)
+        setLeaderboard(data?.length ? data : [{
+          display_name: fallbackProfile.name,
+          merit_score: fallbackProfile.meritScore,
+          tier_label: fallbackProfile.tier,
+        }])
+      })
+      .catch(() => {
+        setLeaderboard([{
+          display_name: fallbackProfile.name,
+          merit_score: fallbackProfile.meritScore,
+          tier_label: fallbackProfile.tier,
+        }])
       })
   }, [])
 
   async function handleSignOut() {
-    await supabase.auth.signOut()
+    await supabase.auth.signOut().catch(() => undefined)
     setSettingsOpen(false)
   }
 

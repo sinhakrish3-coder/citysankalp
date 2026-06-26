@@ -30,37 +30,45 @@ export function useCurrentUser(): CurrentUser {
     let mounted = true
 
     async function bootstrap() {
-      // 1. Check for an existing session
-      const { data: { session } } = await supabase.auth.getSession()
-      let currentUser = session?.user ?? null
+      try {
+        // 1. Check for an existing session
+        const { data: { session } } = await supabase.auth.getSession()
+        let currentUser = session?.user ?? null
 
-      // 2. If no session, sign in anonymously (creates a real user row)
-      if (!currentUser) {
-        const { data, error } = await supabase.auth.signInAnonymously()
-        if (error) {
-          console.error('[CitySankalp] Anonymous sign-in failed:', error.message)
-        } else {
-          currentUser = data.user
+        // 2. If no session, sign in anonymously (creates a real user row)
+        if (!currentUser) {
+          const { data, error } = await supabase.auth.signInAnonymously()
+          if (error) {
+            console.error('[CitySankalp] Anonymous sign-in failed:', error.message)
+          } else {
+            currentUser = data.user
+          }
         }
-      }
 
-      if (!mounted || !currentUser) { setLoading(false); return }
-      setUser(currentUser)
+        if (!mounted || !currentUser) { setLoading(false); return }
+        setUser(currentUser)
 
-      // 3. Fetch the profile the DB trigger created for us.
-      //    .maybeSingle() returns { data: null, error: null } for zero rows
-      //    (no 406 HTTP error) so new anonymous users don't crash the hook.
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', currentUser.id)
-        .maybeSingle()
+        // 3. Fetch the profile the DB trigger created for us.
+        //    .maybeSingle() returns { data: null, error: null } for zero rows
+        //    (no 406 HTTP error) so new anonymous users don't crash the hook.
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .maybeSingle()
 
-      if (profileError) {
-        console.error('[CitySankalp] Profile fetch error:', profileError.message)
-      }
-      if (mounted) {
-        setProfile(profileData ?? null)
+        if (profileError) {
+          console.error('[CitySankalp] Profile fetch error:', profileError.message)
+        }
+        if (mounted) {
+          setProfile(profileData ?? null)
+          setLoading(false)
+        }
+      } catch (err) {
+        console.error('[CitySankalp] Auth bootstrap failed:', err)
+        if (!mounted) return
+        setUser(null)
+        setProfile(null)
         setLoading(false)
       }
     }

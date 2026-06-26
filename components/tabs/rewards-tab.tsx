@@ -31,7 +31,7 @@ const rewardIcons: Record<MappedReward['icon'], typeof Gift> = {
 function CircularScore({ score, max }: { score: number; max: number }) {
   const radius = 70
   const circumference = 2 * Math.PI * radius
-  const progress = Math.min(score / max, 1)
+  const progress = Math.min(score / Math.max(max, 1), 1)
   const offset = circumference * (1 - progress)
 
   return (
@@ -85,7 +85,7 @@ export function RewardsTab() {
   async function handleJoin(compId: string) {
     if (!user?.id) return
     const isJoined = joinedIds.has(compId) || localJoinedIds.has(compId)
-    const success = await join(compId, user.id, isJoined)
+    const success = await join(compId, user.id, isJoined).catch(() => undefined)
     if (success !== undefined) {
       setLocalJoinedIds(prev => {
         const next = new Set(prev)
@@ -181,7 +181,9 @@ export function RewardsTab() {
                 <Card
                   key={r.id}
                   onClick={() => {
-                    if (canAfford && user?.id) redeem(r.id, r.cost, user.id, profile.meritScore)
+                    if (canAfford && user?.id) {
+                      redeem(r.id, r.cost, user.id, profile.meritScore).catch(() => false)
+                    }
                   }}
                   className={`w-36 shrink-0 items-center gap-2 border-border/60 bg-card p-4 text-center ${canAfford ? 'cursor-pointer hover:border-primary/50' : 'opacity-70'}`}
                 >
