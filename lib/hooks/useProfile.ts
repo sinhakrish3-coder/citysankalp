@@ -41,7 +41,7 @@ export function useProfile(userId: string | null | undefined): UseProfileReturn 
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single()
+      .maybeSingle()
       .then(({ data, error: fetchError }) => {
         if (!mounted) return
         if (fetchError) {
