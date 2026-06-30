@@ -50,4 +50,13 @@ Instead of scattered WhatsApp messages, duplicate reports, and slow complaint po
 
 ---
 
+## 📄 Documentation
+
+For the complete project documentation, architecture, workflow, and implementation details, please refer to the Google Document below.
+
+🔗 **Project Documentation:**  
+https://docs.google.com/document/d/1i7ROhhEJQPKYaLHXoIqH4gJeX8vZaiyEnbb0J4h9ZdQ/edit?usp=drivesdk
+
+---
+
 ⭐ If you found this project interesting, consider starring the repository.
